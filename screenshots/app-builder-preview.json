@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Matter Tracker",
+      "hasCanvas": false,
+      "bodyTextLen": 1767,
+      "bodyTextHash": "1944da968b0801ab9f6449f3859f8e573d7f1bfabfa3c89571e52156cf06cf2a",
+      "bodyTextPrefix": "Matter Tracker Today Matters Lists Tasks Settings New Sample mat",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Matter Tracker",
+      "hasCanvas": false,
+      "bodyTextLen": 1767,
+      "bodyTextHash": "9710fc85e8c273e967fdecf23dd89ce55071e687009e38565e81dd44d4d41480",
+      "bodyTextPrefix": "Matter Tracker New Sample matters are loaded. Add a real case, o",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [
+    "BRAND NOTE: no custom public/og.jpg — the platform will serve the og.grok.me placeholder. Custom cards are the default for games of every kind (DOM board/word games included), whimsical apps, creative tools, and brand-forward pages — only plain utilities (converters, CRUD trackers, admin dashboards) keep the placeholder. If this app is not a plain utility, finish the brand-asset pass per /workspace/.grok/skills/og/SKILL.md."
+  ],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
