@@ -24,7 +24,7 @@ import { useUi } from "@/lib/store/ui";
 import { matterFromLookup, useTracker } from "@/lib/store/tracker";
 import { pullMissingOrders } from "@/lib/orders";
 import type { CaseType, Forum, StampReg } from "@/lib/types";
-import { SAT_APPEAL_TYPES } from "@/lib/types";
+import { NCLT_BENCHES, NCLT_CASE_TYPES, SAT_APPEAL_TYPES } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 export function AddMatterDialog() {
@@ -35,6 +35,7 @@ export function AddMatterDialog() {
   const matters = useTracker((s) => s.matters);
 
   const [forum, setForum] = useState<Forum>("bhc");
+  const [bench, setBench] = useState("9");
   const [side, setSide] = useState("2");
   const [stampreg, setStampreg] = useState<StampReg>("R");
   const [types, setTypes] = useState<CaseType[]>([]);
@@ -49,6 +50,12 @@ export function AddMatterDialog() {
     if (forum === "sat") {
       setTypes([...SAT_APPEAL_TYPES]);
       setCaseType((cur) => cur || SAT_APPEAL_TYPES[0].value);
+      setLoadingTypes(false);
+      return;
+    }
+    if (forum === "nclt") {
+      setTypes([...NCLT_CASE_TYPES]);
+      setCaseType((cur) => cur || NCLT_CASE_TYPES[0].value);
       setLoadingTypes(false);
       return;
     }
@@ -73,7 +80,8 @@ export function AddMatterDialog() {
   async function onSave() {
     const type =
       types.find((t) => t.value === caseType) ||
-      SAT_APPEAL_TYPES.find((t) => t.value === caseType);
+      SAT_APPEAL_TYPES.find((t) => t.value === caseType) ||
+      NCLT_CASE_TYPES.find((t) => t.value === caseType);
     if (!caseType || !caseNo.trim() || !/^\d{4}$/.test(year)) {
       toast.error("Select a type and enter a case number and four-digit year.");
       return;
@@ -81,8 +89,9 @@ export function AddMatterDialog() {
     setSaving(true);
     const params = {
       forum,
-      side: forum === "sat" ? "2" : side,
-      stampreg: forum === "sat" ? ("R" as StampReg) : stampreg,
+      bench: forum === "nclt" ? bench : undefined,
+      side: forum === "bhc" ? side : "2",
+      stampreg: forum === "bhc" ? stampreg : ("R" as StampReg),
       case_type: caseType,
       case_no: caseNo.trim(),
       year,
@@ -94,8 +103,11 @@ export function AddMatterDialog() {
       return;
     }
     const satId = ["sat", caseType, caseNo.trim().replace(/\D/g, "").padStart(4, "0"), year].join("|");
+    const ncltId = ["nclt", bench, caseType, caseNo.trim().replace(/\D/g, ""), year].join("|");
     const bhcId = [side, stampreg, caseType, caseNo.trim(), year].join("|");
-    const existing = matters.find((m) => m.id === (forum === "sat" ? satId : bhcId));
+    const existing = matters.find(
+      (m) => m.id === (forum === "sat" ? satId : forum === "nclt" ? ncltId : bhcId),
+    );
     const matter = matterFromLookup(
       { ...params, type_name: type?.label || "" },
       res.lookup,
@@ -123,15 +135,18 @@ export function AddMatterDialog() {
           <DialogDescription>
             {forum === "sat"
               ? "SEBI, IRDAI or PFRDA appeal as it appears on the SAT cause list."
-              : "Case types load from the Bombay High Court site after you choose the side."}
+              : forum === "nclt"
+                ? "NCLT case number as published — Mumbai is selected by default."
+                : "Case types load from the Bombay High Court site after you choose the side."}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
           <div className="mb-5 flex gap-1 rounded-full bg-surface-2 p-1">
             {(
               [
-                ["bhc", "Bombay High Court"],
+                ["bhc", "High Court"],
                 ["sat", "SAT"],
+                ["nclt", "NCLT"],
               ] as const
             ).map(([id, label]) => (
               <button
@@ -218,7 +233,7 @@ export function AddMatterDialog() {
               />
             </div>
               </>
-            ) : (
+            ) : forum === "sat" ? (
               <>
                 <div className="sm:col-span-2">
                   <Label>Appeal type</Label>
@@ -253,12 +268,63 @@ export function AddMatterDialog() {
                   />
                 </div>
               </>
+            ) : (
+              <>
+                <div>
+                  <Label>Bench</Label>
+                  <select
+                    className="field-select"
+                    value={bench}
+                    onChange={(e) => setBench(e.target.value)}
+                  >
+                    {NCLT_BENCHES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="sm:col-span-2">
+                  <Label>Case type</Label>
+                  <select
+                    className="field-select"
+                    value={caseType}
+                    onChange={(e) => setCaseType(e.target.value)}
+                  >
+                    {NCLT_CASE_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Case number</Label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="e.g. 3025"
+                    value={caseNo}
+                    onChange={(e) => setCaseNo(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Year</Label>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                  />
+                </div>
+              </>
             )}
           </div>
           <p className="mt-6 text-sm text-muted">
             {forum === "sat"
               ? "SAT records and orders are fetched from sat.gov.in. Existing notes are kept if you add the same appeal again."
-              : "The court record is fetched live. Every available order is saved in this browser. Notes are kept if you add the same case again."}
+              : forum === "nclt"
+                ? "NCLT records come from the e-filing portal. Recent orders with a PDF are saved here."
+                : "The court record is fetched live. Every available order is saved in this browser. Notes are kept if you add the same case again."}
           </p>
         </DialogBody>
         <DialogFooter>

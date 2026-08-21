@@ -1,6 +1,6 @@
-import { fetchCauselistJudges, scanCauselistBatch, scanSatLists } from "@/lib/court/actions";
+import { fetchCauselistJudges, scanCauselistBatch, scanNcltLists, scanSatLists } from "@/lib/court/actions";
 import type { ListingRow } from "@/lib/types";
-import { matterCasenos, short } from "@/lib/utils";
+import { forumOf, matterCasenos, short } from "@/lib/utils";
 import { prettyCourtDay } from "@/lib/dates";
 import { useTracker } from "@/lib/store/tracker";
 import { useUi } from "@/lib/store/ui";
@@ -66,6 +66,65 @@ export async function runCauselistScan(numDays: number) {
         });
       }
       if (sat.hits.length) mergeListingRows(allRows, days, numDays);
+    }
+
+    setScanProgress("NCLT cause lists…");
+    const ncltBenches = [
+      ...new Set([
+        "9",
+        ...matters.filter((m) => forumOf(m) === "nclt").map((m) => m.bench || "9"),
+      ]),
+    ];
+    const nclt = await scanNcltLists({
+      data: {
+        dates: days.map((d) => d.date),
+        watched: settings.watched,
+        tracked,
+        benches: ncltBenches,
+      },
+    });
+    if (nclt.ok) {
+      for (const hit of nclt.hits) {
+        const dmy = (hit.href.match(/(\d{2})[./-](\d{2})[./-](\d{4})/) || []).slice(1);
+        const ddmm = dmy.length === 3 ? `${dmy[0]}-${dmy[1]}-${dmy[2]}` : "";
+        const matchDay = days.find((d) => d.date === ddmm) || days[0];
+        const mine = tracked.some((t) => t.includes(hit.no) && t.includes(hit.year));
+        const m = matters.find((x) =>
+          matterCasenos(x).some((c) => c.includes(hit.no) && c.includes(hit.year)),
+        );
+        allRows.push({
+          date: matchDay.short,
+          date_full: matchDay.full,
+          date_ddmm: matchDay.date,
+          matter:
+            mine && m
+              ? `${short(m.petitioner)} v ${short(m.respondent)}`.replace(/^ v | v$/g, "")
+              : hit.parties || hit.caseno,
+          number: hit.caseno,
+          serial: hit.serial,
+          list_type: `NCLT · ${hit.court || hit.list_type}`,
+          judge: hit.judge,
+          court: hit.court,
+          caption: hit.caption,
+          connected: hit.connected,
+          reasons: [...(mine ? ["Your matter"] : []), ...hit.advocates],
+          tracked: Boolean(mine),
+          mid: m?.id ?? null,
+          source: "nclt",
+          href: hit.href,
+          add: mine
+            ? null
+            : {
+                forum: "nclt",
+                abbr: hit.type_name,
+                stampreg: "R",
+                no: hit.no,
+                year: hit.year,
+                bench: hit.bench || "9",
+              },
+        });
+      }
+      if (nclt.hits.length) mergeListingRows(allRows, days, numDays);
     }
 
     for (const day of days) {

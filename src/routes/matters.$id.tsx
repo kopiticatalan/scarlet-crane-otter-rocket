@@ -111,6 +111,7 @@ function MatterPage() {
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="font-mono text-ink">{caseLabel(matter)}</span>
               {forumOf(matter) === "sat" ? <span>SAT · Mumbai</span> : null}
+              {forumOf(matter) === "nclt" ? <span>{matter.side_label || "NCLT"}</span> : null}
               {matter.status ? <StatusPill status={matter.status} /> : null}
               {matter.cnr ? <span>{matter.cnr}</span> : null}
               {matter.sample ? <span>sample</span> : null}

@@ -24,7 +24,9 @@ export function matterCaption(petitioner?: string, respondent?: string) {
 }
 
 export function forumOf(m: { forum?: string }) {
-  return m.forum === "sat" ? "sat" : "bhc";
+  if (m.forum === "sat") return "sat";
+  if (m.forum === "nclt") return "nclt";
+  return "bhc";
 }
 
 export function caseLabel(m: {
@@ -33,7 +35,12 @@ export function caseLabel(m: {
   case_no?: string;
   year?: string;
   stampreg?: string;
+  lodging?: string;
+  bench_label?: string;
 }) {
+  if (forumOf(m) === "nclt") {
+    return m.lodging || `${(m.type_name || "NCLT").split(" (")[0]} ${m.case_no}/${m.year}`;
+  }
   const no = m.case_no || "—";
   const yr = m.year || "—";
   if (forumOf(m) === "sat") {
@@ -67,6 +74,16 @@ export function matterCasenos(m: {
       out.push(`APPEAL - ${padded}/${yr}`);
     }
     if (m.lodging) out.push(String(m.lodging).toUpperCase());
+  }
+  if (forumOf(m) === "nclt") {
+    const no = (m.case_no || "").replace(/\D/g, "");
+    const yr = m.year || "";
+    if (m.lodging) out.push(String(m.lodging).toUpperCase());
+    if (no && yr) {
+      out.push(`${no}/${yr}`);
+      out.push(`${no}(MB)${yr}`);
+      out.push(`${no}/MB/${yr}`);
+    }
   }
   return out;
 }

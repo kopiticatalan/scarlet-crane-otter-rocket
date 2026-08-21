@@ -123,13 +123,13 @@ function Dashboard() {
       <Card>
         <CardBody className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-[15px] font-semibold tracking-tight">Mac app</div>
+            <div className="text-[15px] font-semibold tracking-tight">Take this app with you</div>
             <p className="mt-0.5 text-sm text-muted">
-              Double-click on your MacBook. No install, no Terminal.
+              Zip of the current app — High Court, SAT and NCLT.
             </p>
           </div>
-          <a href="/Matter-Tracker-for-Mac.zip" download="Matter-Tracker-for-Mac.zip">
-            <Button>Download for Mac</Button>
+          <a href="/Matter-Tracker.zip" download="Matter-Tracker.zip">
+            <Button>Download zip</Button>
           </a>
         </CardBody>
       </Card>

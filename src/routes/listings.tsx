@@ -36,7 +36,7 @@ function ListingsPage() {
         subtitle={
           listings.generated_at
             ? `${listings.range_label || "Range"} · last scanned ${listings.generated_at}`
-            : "Tracked matters and watched firms for Bombay High Court and SAT."
+            : "Tracked matters and watched firms for Bombay High Court, SAT and NCLT."
         }
         action={
           <>
@@ -120,7 +120,7 @@ function ListingsPage() {
                   <td className="px-5 py-4 align-top">
                     <div className="max-w-[280px] font-medium leading-snug">{r.matter}</div>
                     <div className="text-xs text-muted">
-                      {r.source === "sat" ? "SAT · " : ""}Sr. {r.serial || "—"}
+                      {r.source === "sat" ? "SAT · " : r.source === "nclt" ? "NCLT · " : ""}Sr. {r.serial || "—"}
                       {r.connected ? ` · with ${r.connected}` : ""}
                     </div>
                   </td>
@@ -141,7 +141,7 @@ function ListingsPage() {
                   </td>
                   <td className="px-5 py-4 align-top">
                     <div className="flex justify-end gap-3">
-                      {r.source === "sat" && r.href ? (
+                      {(r.source === "sat" || r.source === "nclt") && r.href ? (
                         <a
                           href={r.href}
                           target="_blank"

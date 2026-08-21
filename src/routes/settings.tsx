@@ -34,7 +34,7 @@ function SettingsPage() {
           <Card>
             <CardBody className="space-y-3">
               <p className="text-sm text-muted">
-                Cause lists also surface matters where these firms appear — Bombay High Court and SAT.
+                Cause lists also surface matters where these firms appear — Bombay High Court, SAT and NCLT.
               </p>
               {watched.map((w, i) => (
                 <div key={i} className="flex gap-2">

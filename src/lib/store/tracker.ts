@@ -11,7 +11,7 @@ import type {
   OrderMeta,
   TrackerSettings,
 } from "@/lib/types";
-import { DEFAULT_SETTINGS, SIDE_LABEL, STAMP_LABEL } from "@/lib/types";
+import { DEFAULT_SETTINGS, NCLT_BENCHES, SIDE_LABEL, STAMP_LABEL } from "@/lib/types";
 import type { CourtLookup } from "@/lib/types";
 import { SAMPLE_MATTERS, sampleListings } from "@/lib/sample-data";
 import { clockNow, prettyCourtDay } from "@/lib/dates";
@@ -60,11 +60,8 @@ function annotate(rows: ListingRow[], matters: Matter[]): ListingRow[] {
       mid: null,
       reasons,
       add:
-        row.source === "sat"
-          ? row.add ??
-            (mm
-              ? { forum: "sat" as const, abbr: mm[1], stampreg: "R" as const, no: mm[3], year: mm[4] }
-              : null)
+        row.source === "sat" || row.source === "nclt"
+          ? row.add
           : mm
             ? {
                 forum: "bhc" as const,
@@ -88,20 +85,38 @@ export function matterFromLookup(
     const pb = b.date.split("/").reverse().join("");
     return pb.localeCompare(pa);
   })[0];
-  const forum = params.forum === "sat" ? "sat" : "bhc";
-  const caseNo = forum === "sat" ? String(params.case_no).replace(/\D/g, "").padStart(4, "0") : params.case_no;
+  const forum = params.forum === "sat" ? "sat" : params.forum === "nclt" ? "nclt" : "bhc";
+  const caseNo =
+    forum === "sat"
+      ? String(params.case_no).replace(/\D/g, "").padStart(4, "0")
+      : params.case_no;
+  const ncltBench = NCLT_BENCHES.find((b) => b.value === (params.bench || "9"))?.label || "Mumbai";
   const id =
     existing?.id ||
     (forum === "sat"
       ? ["sat", params.case_type, caseNo, params.year].join("|")
-      : [params.side, params.stampreg, params.case_type, params.case_no, params.year].join("|"));
+      : forum === "nclt"
+        ? ["nclt", params.bench || "9", params.case_type, caseNo, params.year].join("|")
+        : [params.side, params.stampreg, params.case_type, params.case_no, params.year].join("|"));
   const base: Matter = {
     id,
     forum,
-    side: (forum === "sat" ? "2" : params.side) as Matter["side"],
-    side_label: forum === "sat" ? "SAT · Mumbai" : SIDE_LABEL[params.side as Matter["side"]] || params.side,
+    bench: forum === "nclt" ? params.bench || "9" : existing?.bench,
+    bench_label: forum === "nclt" ? ncltBench : existing?.bench_label,
+    side: (forum === "bhc" ? params.side : "2") as Matter["side"],
+    side_label:
+      forum === "sat"
+        ? "SAT · Mumbai"
+        : forum === "nclt"
+          ? `NCLT · ${ncltBench}`
+          : SIDE_LABEL[params.side as Matter["side"]] || params.side,
     stampreg: params.stampreg,
-    stampreg_label: forum === "sat" ? params.type_name.split(" - ")[0] || "Appeal" : STAMP_LABEL[params.stampreg],
+    stampreg_label:
+      forum === "sat"
+        ? params.type_name.split(" - ")[0] || "Appeal"
+        : forum === "nclt"
+          ? params.type_name.split(" (")[0] || "Petition"
+          : STAMP_LABEL[params.stampreg],
     case_type: params.case_type,
     type_name: params.type_name,
     case_no: caseNo,

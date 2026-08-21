@@ -1,9 +1,10 @@
 export type Side = "1" | "2";
 export type StampReg = "R" | "S";
-export type Forum = "bhc" | "sat";
+export type Forum = "bhc" | "sat" | "nclt";
 
 export type LookupParams = {
   forum?: Forum;
+  bench?: string;
   side: string;
   stampreg: StampReg;
   case_type: string;
@@ -43,6 +44,8 @@ export type OrderMeta = {
 export type Matter = {
   id: string;
   forum?: Forum;
+  bench?: string;
+  bench_label?: string;
   side: Side;
   side_label: string;
   stampreg: StampReg;
@@ -103,6 +106,7 @@ export type ListingRow = {
     stampreg: StampReg;
     no: string;
     year: string;
+    bench?: string;
   } | null;
 };
 
@@ -161,6 +165,42 @@ export const SAT_APPEAL_TYPES: { value: string; label: string }[] = [
   { value: "1", label: "SEBI" },
   { value: "2", label: "IRDAI" },
   { value: "3", label: "PFRDA" },
+];
+
+export const NCLT_BENCHES: { value: string; label: string }[] = [
+  { value: "9", label: "Mumbai" },
+  { value: "10", label: "New Delhi / Principal" },
+  { value: "5", label: "Chennai" },
+  { value: "8", label: "Kolkata" },
+  { value: "1", label: "Ahmedabad" },
+  { value: "3", label: "Bengaluru" },
+  { value: "7", label: "Hyderabad" },
+  { value: "4", label: "Chandigarh" },
+  { value: "2", label: "Allahabad" },
+  { value: "6", label: "Guwahati" },
+  { value: "11", label: "Jaipur" },
+  { value: "12", label: "Amaravati" },
+  { value: "13", label: "Cuttack" },
+  { value: "14", label: "Kochi" },
+  { value: "15", label: "Indore" },
+];
+
+export const NCLT_CASE_TYPES: { value: string; label: string }[] = [
+  { value: "16", label: "Company Petition IB (IBC)" },
+  { value: "2", label: "Company Petition (Companies Act)" },
+  { value: "15", label: "CP(AA) Merger & Amalgamation" },
+  { value: "14", label: "CA(A) Merger & Amalgamation" },
+  { value: "13", label: "Company Application (Companies Act)" },
+  { value: "18", label: "Company Application (IBC)" },
+  { value: "20", label: "Interlocutory Application (IBC)" },
+  { value: "4", label: "Interlocutory Application (Companies Act)" },
+  { value: "38", label: "IA (IBC) Plan" },
+  { value: "39", label: "IA (IBC) Liquidation" },
+  { value: "1", label: "Transfer Petition (Companies Act)" },
+  { value: "10", label: "Miscellaneous Application (Companies Act)" },
+  { value: "26", label: "Miscellaneous Application (IBC)" },
+  { value: "33", label: "Insolvency (Pre-Packaged)" },
+  { value: "35", label: "Voluntary Liquidation (IBC)" },
 ];
 
 export const DEFAULT_SETTINGS: TrackerSettings = {

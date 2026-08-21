@@ -2,7 +2,8 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const lookupSchema = z.object({
-  forum: z.enum(["bhc", "sat"]).optional(),
+  forum: z.enum(["bhc", "sat", "nclt"]).optional(),
+  bench: z.string().optional(),
   side: z.string(),
   stampreg: z.enum(["R", "S"]),
   case_type: z.string(),
@@ -39,6 +40,16 @@ export const fetchCase = createServerFn({ method: "POST" })
         });
         return { ok: true as const, lookup };
       }
+      if (data.forum === "nclt") {
+        const { lookupNcltCase } = await import("./nclt.server");
+        const lookup = await lookupNcltCase({
+          bench: data.bench || "9",
+          case_type: data.case_type,
+          case_no: data.case_no,
+          year: data.year,
+        });
+        return { ok: true as const, lookup };
+      }
       const { lookupCase } = await import("./client.server");
       const lookup = await lookupCase(data);
       return { ok: true as const, lookup };
@@ -65,6 +76,20 @@ export const fetchOrderPdfs = createServerFn({ method: "POST" })
         const { downloadSatOrders } = await import("./sat.server");
         const files = await downloadSatOrders(
           {
+            case_type: params.case_type,
+            case_no: params.case_no,
+            year: params.year,
+          },
+          keys,
+          { petitioner, respondent },
+        );
+        return { ok: true as const, files };
+      }
+      if (params.forum === "nclt") {
+        const { downloadNcltOrders } = await import("./nclt.server");
+        const files = await downloadNcltOrders(
+          {
+            bench: params.bench || "9",
             case_type: params.case_type,
             case_no: params.case_no,
             year: params.year,
@@ -155,6 +180,29 @@ export const downloadCauselistPdf = createServerFn({ method: "POST" })
     }
   });
 
+export const scanNcltLists = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      dates: z.array(z.string()),
+      watched: z.array(z.string()),
+      tracked: z.array(z.string()),
+      benches: z.array(z.string()),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { scanNcltCauselists } = await import("./nclt.server");
+      const hits = await scanNcltCauselists(data);
+      return { ok: true as const, hits };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "NCLT cause-list scan failed.",
+        hits: [],
+      };
+    }
+  });
+
 export const scanSatLists = createServerFn({ method: "POST" })
   .validator(
     z.object({
@@ -180,11 +228,12 @@ export const scanSatLists = createServerFn({ method: "POST" })
 export const resolveListing = createServerFn({ method: "POST" })
   .validator(
     z.object({
-      forum: z.enum(["bhc", "sat"]).optional(),
+      forum: z.enum(["bhc", "sat", "nclt"]).optional(),
       abbr: z.string(),
       stampreg: z.enum(["R", "S"]),
       no: z.string(),
       year: z.string(),
+      bench: z.string().optional(),
     }),
   )
   .handler(async ({ data }) => {
@@ -209,6 +258,25 @@ export const resolveListing = createServerFn({ method: "POST" })
           year: params.year,
         });
         return { ok: true as const, params, type_name: type.label, lookup };
+      }
+      if (data.forum === "nclt") {
+        const { lookupNcltCase, ncltTypeFromAbbr } = await import("./nclt.server");
+        const params = {
+          forum: "nclt" as const,
+          bench: data.bench || "9",
+          side: "2",
+          stampreg: "R" as const,
+          case_type: ncltTypeFromAbbr(data.abbr),
+          case_no: data.no,
+          year: data.year,
+        };
+        const lookup = await lookupNcltCase({
+          bench: params.bench,
+          case_type: params.case_type,
+          case_no: params.case_no,
+          year: params.year,
+        });
+        return { ok: true as const, params, type_name: data.abbr || "NCLT", lookup };
       }
       const { resolveListingAdd } = await import("./client.server");
       const resolved = await resolveListingAdd(data);

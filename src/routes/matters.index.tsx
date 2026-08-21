@@ -37,7 +37,8 @@ function MattersPage() {
           .toLowerCase();
         if (term && !hay.includes(term)) return false;
         if (side === "sat" && forumOf(m) !== "sat") return false;
-        if (side && side !== "sat" && (forumOf(m) === "sat" || m.side !== side)) return false;
+        if (side === "nclt" && forumOf(m) !== "nclt") return false;
+        if (side && side !== "sat" && side !== "nclt" && (forumOf(m) !== "bhc" || m.side !== side)) return false;
         if (filter === "upcoming" && !(m.next_hearing || m.next_listing)) return false;
         if (filter === "tasks" && !m.next_steps.some((s) => !s.done)) return false;
         if (filter === "disposed" && !/dispos/i.test(m.status)) return false;
@@ -71,6 +72,7 @@ function MattersPage() {
         <select className={fieldSelect + " w-auto"} value={side} onChange={(e) => setSide(e.target.value)}>
           <option value="">All forums</option>
           <option value="sat">SAT</option>
+          <option value="nclt">NCLT</option>
           <option value="2">Original Side</option>
           <option value="1">Appellate Side</option>
         </select>
@@ -128,7 +130,9 @@ function MattersPage() {
                     <div className="mt-0.5 text-xs text-muted">
                       {forumOf(m) === "sat"
                         ? "SAT · Mumbai"
-                        : `${m.side_label} · ${m.stampreg_label}`}
+                        : forumOf(m) === "nclt"
+                          ? m.side_label || "NCLT"
+                          : `${m.side_label} · ${m.stampreg_label}`}
                       {m.sample ? " · sample" : ""}
                     </div>
                   </td>

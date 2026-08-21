@@ -45,7 +45,12 @@ function asNotes(raw: unknown): HearingNote[] {
 }
 
 export function normalizeImportedMatter(raw: Record<string, unknown>): Matter | null {
-  const forum = String(raw.forum || "") === "sat" ? "sat" : "bhc";
+  const forum =
+    String(raw.forum || "") === "sat"
+      ? "sat"
+      : String(raw.forum || "") === "nclt"
+        ? "nclt"
+        : "bhc";
   const side = String(raw.side || "2") as Matter["side"];
   const stampreg = String(raw.stampreg || "R") as Matter["stampreg"];
   const case_type = String(raw.case_type || "");
@@ -56,14 +61,22 @@ export function normalizeImportedMatter(raw: Record<string, unknown>): Matter | 
     String(raw.id || "") ||
     (forum === "sat"
       ? ["sat", case_type, case_no, year].join("|")
-      : [side, stampreg, case_type, case_no, year].join("|"));
+      : forum === "nclt"
+        ? ["nclt", String(raw.bench || "9"), case_type, case_no, year].join("|")
+        : [side, stampreg, case_type, case_no, year].join("|"));
   return {
     id,
     forum,
+    bench: forum === "nclt" ? String(raw.bench || "9") : undefined,
+    bench_label: forum === "nclt" ? String(raw.bench_label || "Mumbai") : undefined,
     side: side === "1" ? "1" : "2",
     side_label: String(
       raw.side_label ||
-        (forum === "sat" ? "SAT · Mumbai" : SIDE_LABEL[side === "1" ? "1" : "2"]),
+        (forum === "sat"
+          ? "SAT · Mumbai"
+          : forum === "nclt"
+            ? "NCLT · Mumbai"
+            : SIDE_LABEL[side === "1" ? "1" : "2"]),
     ),
     stampreg: stampreg === "S" ? "S" : "R",
     stampreg_label: String(raw.stampreg_label || STAMP_LABEL[stampreg === "S" ? "S" : "R"]),
