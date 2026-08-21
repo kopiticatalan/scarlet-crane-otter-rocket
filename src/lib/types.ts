@@ -1,7 +1,9 @@
 export type Side = "1" | "2";
 export type StampReg = "R" | "S";
+export type Forum = "bhc" | "sat";
 
 export type LookupParams = {
+  forum?: Forum;
   side: string;
   stampreg: StampReg;
   case_type: string;
@@ -40,6 +42,7 @@ export type OrderMeta = {
 
 export type Matter = {
   id: string;
+  forum?: Forum;
   side: Side;
   side_label: string;
   stampreg: StampReg;
@@ -92,7 +95,10 @@ export type ListingRow = {
   reasons: string[];
   tracked: boolean;
   mid?: string | null;
+  source?: Forum;
+  href?: string;
   add?: {
+    forum?: Forum;
     abbr: string;
     stampreg: StampReg;
     no: string;
@@ -150,6 +156,12 @@ export const STAMP_LABEL: Record<StampReg, string> = {
   R: "Register",
   S: "Stamp",
 };
+
+export const SAT_APPEAL_TYPES: { value: string; label: string }[] = [
+  { value: "1", label: "SEBI" },
+  { value: "2", label: "IRDAI" },
+  { value: "3", label: "PFRDA" },
+];
 
 export const DEFAULT_SETTINGS: TrackerSettings = {
   watched: ["Bharucha & Partners", "Advani & Co.", "Advani Law LLP"],

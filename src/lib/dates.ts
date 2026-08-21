@@ -28,6 +28,17 @@ export function parseIso(s?: string | null): Date | null {
     const [y, m, d] = s.split("-").map(Number);
     return new Date(y, m - 1, d);
   }
+  const en = String(s).match(/^(\d{1,2})\s+([A-Za-z]{3,9})\.?\s+(\d{4})$/);
+  if (en) {
+    const months: Record<string, number> = {
+      jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5,
+      jul: 6, aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+    };
+    const mon = months[en[2].slice(0, 3).toLowerCase()];
+    if (mon != null) return new Date(Number(en[3]), mon, Number(en[1]));
+  }
+  const dash = String(s).match(/^(\d{2})-(\d{2})-(\d{4})$/);
+  if (dash) return new Date(Number(dash[3]), Number(dash[2]) - 1, Number(dash[1]));
   return null;
 }
 

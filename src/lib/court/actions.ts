@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
 const lookupSchema = z.object({
+  forum: z.enum(["bhc", "sat"]).optional(),
   side: z.string(),
   stampreg: z.enum(["R", "S"]),
   case_type: z.string(),
@@ -29,6 +30,15 @@ export const fetchCase = createServerFn({ method: "POST" })
   .validator(lookupSchema)
   .handler(async ({ data }) => {
     try {
+      if (data.forum === "sat") {
+        const { lookupSatCase } = await import("./sat.server");
+        const lookup = await lookupSatCase({
+          case_type: data.case_type,
+          case_no: data.case_no,
+          year: data.year,
+        });
+        return { ok: true as const, lookup };
+      }
       const { lookupCase } = await import("./client.server");
       const lookup = await lookupCase(data);
       return { ok: true as const, lookup };
@@ -50,8 +60,21 @@ export const fetchOrderPdfs = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
-      const { downloadOrders } = await import("./client.server");
       const { keys, petitioner, respondent, ...params } = data;
+      if (params.forum === "sat") {
+        const { downloadSatOrders } = await import("./sat.server");
+        const files = await downloadSatOrders(
+          {
+            case_type: params.case_type,
+            case_no: params.case_no,
+            year: params.year,
+          },
+          keys,
+          { petitioner, respondent },
+        );
+        return { ok: true as const, files };
+      }
+      const { downloadOrders } = await import("./client.server");
       const files = await downloadOrders(params, keys, {
         petitioner,
         respondent,
@@ -132,9 +155,32 @@ export const downloadCauselistPdf = createServerFn({ method: "POST" })
     }
   });
 
+export const scanSatLists = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      dates: z.array(z.string()),
+      watched: z.array(z.string()),
+      tracked: z.array(z.string()),
+    }),
+  )
+  .handler(async ({ data }) => {
+    try {
+      const { scanSatCauselists } = await import("./sat.server");
+      const hits = await scanSatCauselists(data);
+      return { ok: true as const, hits };
+    } catch (e) {
+      return {
+        ok: false as const,
+        error: e instanceof Error ? e.message : "SAT cause-list scan failed.",
+        hits: [],
+      };
+    }
+  });
+
 export const resolveListing = createServerFn({ method: "POST" })
   .validator(
     z.object({
+      forum: z.enum(["bhc", "sat"]).optional(),
       abbr: z.string(),
       stampreg: z.enum(["R", "S"]),
       no: z.string(),
@@ -143,6 +189,27 @@ export const resolveListing = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     try {
+      if (data.forum === "sat") {
+        const { lookupSatCase, SAT_APPEAL_TYPES, padSatNo } = await import("./sat.server");
+        const type =
+          SAT_APPEAL_TYPES.find(
+            (t) => t.label.toUpperCase() === data.abbr.toUpperCase(),
+          ) || SAT_APPEAL_TYPES[0];
+        const params = {
+          forum: "sat" as const,
+          side: "2",
+          stampreg: "R" as const,
+          case_type: type.value,
+          case_no: padSatNo(data.no),
+          year: data.year,
+        };
+        const lookup = await lookupSatCase({
+          case_type: params.case_type,
+          case_no: params.case_no,
+          year: params.year,
+        });
+        return { ok: true as const, params, type_name: type.label, lookup };
+      }
       const { resolveListingAdd } = await import("./client.server");
       const resolved = await resolveListingAdd(data);
       return { ok: true as const, ...resolved };

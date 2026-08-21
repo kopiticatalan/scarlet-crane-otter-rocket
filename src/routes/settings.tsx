@@ -34,7 +34,7 @@ function SettingsPage() {
           <Card>
             <CardBody className="space-y-3">
               <p className="text-sm text-muted">
-                Cause lists also surface matters where these firms appear.
+                Cause lists also surface matters where these firms appear — Bombay High Court and SAT.
               </p>
               {watched.map((w, i) => (
                 <div key={i} className="flex gap-2">
@@ -185,6 +185,22 @@ function SettingsPage() {
                   />
                 </label>
               </div>
+            </CardBody>
+          </Card>
+        </Section>
+
+        <Section title="Mac app">
+          <Card>
+            <CardBody className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="text-[15px] font-medium">Matter Tracker for Mac</div>
+                <p className="text-sm text-muted">
+                  Unzip, drag to Applications, then right-click → Open.
+                </p>
+              </div>
+              <a href="/Matter-Tracker-for-Mac.zip" download="Matter-Tracker-for-Mac.zip">
+                <Button>Download</Button>
+              </a>
             </CardBody>
           </Card>
         </Section>

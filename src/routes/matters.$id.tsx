@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useTracker } from "@/lib/store/tracker";
-import { caseLabel, matterCaption, uid } from "@/lib/utils";
+import { caseLabel, forumOf, matterCaption, uid } from "@/lib/utils";
 import { fromIsoDate, toIsoDate } from "@/lib/dates";
 import { refreshMatter, pullMissingOrders } from "@/lib/orders";
 import { draftHearingBrief } from "@/lib/court/actions";
@@ -110,6 +110,7 @@ function MatterPage() {
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">
               <span className="font-mono text-ink">{caseLabel(matter)}</span>
+              {forumOf(matter) === "sat" ? <span>SAT · Mumbai</span> : null}
               {matter.status ? <StatusPill status={matter.status} /> : null}
               {matter.cnr ? <span>{matter.cnr}</span> : null}
               {matter.sample ? <span>sample</span> : null}
@@ -152,7 +153,14 @@ function MatterPage() {
         <div className="overflow-hidden rounded-2xl bg-line/70 shadow-[var(--shadow-card)]">
           <div className="grid gap-px sm:grid-cols-3">
             <Meta label="Filed" value={matter.filed_on || "—"} />
-            <Meta label="Registered" value={matter.registration_date || "—"} />
+            <Meta
+              label={forumOf(matter) === "sat" ? "AL number" : "Registered"}
+              value={
+                forumOf(matter) === "sat"
+                  ? matter.lodging || "—"
+                  : matter.registration_date || "—"
+              }
+            />
             <Meta
               label="Stage / act"
               value={[matter.stage, matter.act].filter(Boolean).join(" · ") || "—"}

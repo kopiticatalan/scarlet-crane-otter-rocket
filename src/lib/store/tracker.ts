@@ -59,14 +59,21 @@ function annotate(rows: ListingRow[], matters: Matter[]): ListingRow[] {
       tracked: false,
       mid: null,
       reasons,
-      add: mm
-        ? {
-            abbr: mm[1],
-            stampreg: mm[2] ? "S" : "R",
-            no: mm[3],
-            year: mm[4],
-          }
-        : row.add,
+      add:
+        row.source === "sat"
+          ? row.add ??
+            (mm
+              ? { forum: "sat" as const, abbr: mm[1], stampreg: "R" as const, no: mm[3], year: mm[4] }
+              : null)
+          : mm
+            ? {
+                forum: "bhc" as const,
+                abbr: mm[1],
+                stampreg: mm[2] ? "S" : "R",
+                no: mm[3],
+                year: mm[4],
+              }
+            : row.add,
     };
   });
 }
@@ -81,16 +88,23 @@ export function matterFromLookup(
     const pb = b.date.split("/").reverse().join("");
     return pb.localeCompare(pa);
   })[0];
-  const id = [params.side, params.stampreg, params.case_type, params.case_no, params.year].join("|");
+  const forum = params.forum === "sat" ? "sat" : "bhc";
+  const caseNo = forum === "sat" ? String(params.case_no).replace(/\D/g, "").padStart(4, "0") : params.case_no;
+  const id =
+    existing?.id ||
+    (forum === "sat"
+      ? ["sat", params.case_type, caseNo, params.year].join("|")
+      : [params.side, params.stampreg, params.case_type, params.case_no, params.year].join("|"));
   const base: Matter = {
     id,
-    side: params.side as Matter["side"],
-    side_label: SIDE_LABEL[params.side as Matter["side"]] || params.side,
+    forum,
+    side: (forum === "sat" ? "2" : params.side) as Matter["side"],
+    side_label: forum === "sat" ? "SAT · Mumbai" : SIDE_LABEL[params.side as Matter["side"]] || params.side,
     stampreg: params.stampreg,
-    stampreg_label: STAMP_LABEL[params.stampreg],
+    stampreg_label: forum === "sat" ? params.type_name.split(" - ")[0] || "Appeal" : STAMP_LABEL[params.stampreg],
     case_type: params.case_type,
     type_name: params.type_name,
-    case_no: params.case_no,
+    case_no: caseNo,
     year: params.year,
     petitioner: lookup.petitioner,
     respondent: lookup.respondent,

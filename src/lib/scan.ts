@@ -1,4 +1,4 @@
-import { fetchCauselistJudges, scanCauselistBatch } from "@/lib/court/actions";
+import { fetchCauselistJudges, scanCauselistBatch, scanSatLists } from "@/lib/court/actions";
 import type { ListingRow } from "@/lib/types";
 import { matterCasenos, short } from "@/lib/utils";
 import { prettyCourtDay } from "@/lib/dates";
@@ -18,6 +18,56 @@ export async function runCauselistScan(numDays: number) {
   });
   const allRows: ListingRow[] = [];
   try {
+    setScanProgress("SAT cause lists…");
+    const sat = await scanSatLists({
+      data: {
+        dates: days.map((d) => d.date),
+        watched: settings.watched,
+        tracked,
+      },
+    });
+    if (sat.ok) {
+      for (const hit of sat.hits) {
+        const dateKey = hit.href.match(/view-causelist\/(\d{2}-\d{2}-\d{4})/);
+        const matchDay =
+          days.find((d) => d.date === (dateKey?.[1] || "")) || days[0];
+        const mine = tracked.some((t) => t.includes(`${hit.no}/${hit.year}`.toUpperCase()));
+        const m = matters.find((x) =>
+          matterCasenos(x).some((c) => c.includes(`${hit.no}/${hit.year}`.toUpperCase())),
+        );
+        allRows.push({
+          date: matchDay.short,
+          date_full: matchDay.full,
+          date_ddmm: matchDay.date,
+          matter: mine && m
+            ? `${short(m.petitioner)} v ${short(m.respondent)}`.replace(/^ v | v$/g, "")
+            : hit.parties || hit.caseno,
+          number: hit.caseno,
+          serial: hit.serial,
+          list_type: `SAT · ${hit.list_type}`,
+          judge: hit.judge,
+          court: hit.court,
+          caption: hit.caption,
+          connected: hit.connected,
+          reasons: [...(mine ? ["Your matter"] : []), ...hit.advocates],
+          tracked: mine,
+          mid: m?.id ?? null,
+          source: "sat",
+          href: hit.href,
+          add: mine
+            ? null
+            : {
+                forum: "sat",
+                abbr: hit.type_name,
+                stampreg: "R",
+                no: hit.no,
+                year: hit.year,
+              },
+        });
+      }
+      if (sat.hits.length) mergeListingRows(allRows, days, numDays);
+    }
+
     for (const day of days) {
       setScanProgress(`Boards for ${day.short}…`);
       const res = await fetchCauselistJudges({ data: { date: day.date } });
@@ -69,6 +119,7 @@ export async function runCauselistScan(numDays: number) {
             add: mine || !mm
               ? null
               : {
+                  forum: "bhc",
                   abbr: mm[1],
                   stampreg: mm[2] ? "S" : "R",
                   no: mm[3],

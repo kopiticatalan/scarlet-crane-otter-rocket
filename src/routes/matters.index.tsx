@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card";
 import { DatePill, StatusPill } from "@/components/status-pill";
 import { useTracker } from "@/lib/store/tracker";
 import { useUi } from "@/lib/store/ui";
-import { caseLabel, fieldSelect, matterCaption } from "@/lib/utils";
+import { caseLabel, fieldSelect, forumOf, matterCaption } from "@/lib/utils";
 import { refreshMatter } from "@/lib/orders";
 import { toast } from "sonner";
 import { Search } from "lucide-react";
@@ -36,7 +36,8 @@ function MattersPage() {
           .join(" ")
           .toLowerCase();
         if (term && !hay.includes(term)) return false;
-        if (side && m.side !== side) return false;
+        if (side === "sat" && forumOf(m) !== "sat") return false;
+        if (side && side !== "sat" && (forumOf(m) === "sat" || m.side !== side)) return false;
         if (filter === "upcoming" && !(m.next_hearing || m.next_listing)) return false;
         if (filter === "tasks" && !m.next_steps.some((s) => !s.done)) return false;
         if (filter === "disposed" && !/dispos/i.test(m.status)) return false;
@@ -68,7 +69,8 @@ function MattersPage() {
           />
         </div>
         <select className={fieldSelect + " w-auto"} value={side} onChange={(e) => setSide(e.target.value)}>
-          <option value="">All sides</option>
+          <option value="">All forums</option>
+          <option value="sat">SAT</option>
           <option value="2">Original Side</option>
           <option value="1">Appellate Side</option>
         </select>
@@ -124,7 +126,9 @@ function MattersPage() {
                       {matterCaption(m.petitioner, m.respondent)}
                     </Link>
                     <div className="mt-0.5 text-xs text-muted">
-                      {m.side_label} · {m.stampreg_label}
+                      {forumOf(m) === "sat"
+                        ? "SAT · Mumbai"
+                        : `${m.side_label} · ${m.stampreg_label}`}
                       {m.sample ? " · sample" : ""}
                     </div>
                   </td>

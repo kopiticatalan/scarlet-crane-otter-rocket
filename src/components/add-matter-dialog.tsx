@@ -23,7 +23,9 @@ import { fetchCase, fetchCaseTypes } from "@/lib/court/actions";
 import { useUi } from "@/lib/store/ui";
 import { matterFromLookup, useTracker } from "@/lib/store/tracker";
 import { pullMissingOrders } from "@/lib/orders";
-import type { CaseType, StampReg } from "@/lib/types";
+import type { CaseType, Forum, StampReg } from "@/lib/types";
+import { SAT_APPEAL_TYPES } from "@/lib/types";
+import { cn } from "@/lib/utils";
 
 export function AddMatterDialog() {
   const open = useUi((s) => s.addOpen);
@@ -32,6 +34,7 @@ export function AddMatterDialog() {
   const log = useTracker((s) => s.log);
   const matters = useTracker((s) => s.matters);
 
+  const [forum, setForum] = useState<Forum>("bhc");
   const [side, setSide] = useState("2");
   const [stampreg, setStampreg] = useState<StampReg>("R");
   const [types, setTypes] = useState<CaseType[]>([]);
@@ -43,6 +46,12 @@ export function AddMatterDialog() {
 
   useEffect(() => {
     if (!open) return;
+    if (forum === "sat") {
+      setTypes([...SAT_APPEAL_TYPES]);
+      setCaseType((cur) => cur || SAT_APPEAL_TYPES[0].value);
+      setLoadingTypes(false);
+      return;
+    }
     let cancelled = false;
     setLoadingTypes(true);
     fetchCaseTypes({ data: { side } }).then((r) => {
@@ -59,18 +68,21 @@ export function AddMatterDialog() {
     return () => {
       cancelled = true;
     };
-  }, [open, side]);
+  }, [open, side, forum]);
 
   async function onSave() {
-    const type = types.find((t) => t.value === caseType);
+    const type =
+      types.find((t) => t.value === caseType) ||
+      SAT_APPEAL_TYPES.find((t) => t.value === caseType);
     if (!caseType || !caseNo.trim() || !/^\d{4}$/.test(year)) {
       toast.error("Select a type and enter a case number and four-digit year.");
       return;
     }
     setSaving(true);
     const params = {
-      side,
-      stampreg,
+      forum,
+      side: forum === "sat" ? "2" : side,
+      stampreg: forum === "sat" ? ("R" as StampReg) : stampreg,
       case_type: caseType,
       case_no: caseNo.trim(),
       year,
@@ -81,11 +93,9 @@ export function AddMatterDialog() {
       setSaving(false);
       return;
     }
-    const existing = matters.find(
-      (m) =>
-        m.id ===
-        [side, stampreg, caseType, caseNo.trim(), year].join("|"),
-    );
+    const satId = ["sat", caseType, caseNo.trim().replace(/\D/g, "").padStart(4, "0"), year].join("|");
+    const bhcId = [side, stampreg, caseType, caseNo.trim(), year].join("|");
+    const existing = matters.find((m) => m.id === (forum === "sat" ? satId : bhcId));
     const matter = matterFromLookup(
       { ...params, type_name: type?.label || "" },
       res.lookup,
@@ -111,11 +121,38 @@ export function AddMatterDialog() {
         <DialogHeader>
           <DialogTitle>New matter</DialogTitle>
           <DialogDescription>
-            Case types load from the court site after you choose the side.
+            {forum === "sat"
+              ? "SEBI, IRDAI or PFRDA appeal as it appears on the SAT cause list."
+              : "Case types load from the Bombay High Court site after you choose the side."}
           </DialogDescription>
         </DialogHeader>
         <DialogBody>
+          <div className="mb-5 flex gap-1 rounded-full bg-surface-2 p-1">
+            {(
+              [
+                ["bhc", "Bombay High Court"],
+                ["sat", "SAT"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={cn(
+                  "flex-1 rounded-full px-4 py-2 text-sm font-medium transition",
+                  forum === id ? "bg-surface text-ink shadow-sm" : "text-muted",
+                )}
+                onClick={() => {
+                  setForum(id);
+                  setCaseType("");
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {forum === "bhc" ? (
+              <>
             <div>
               <Label>Side</Label>
               <Select value={side} onValueChange={setSide}>
@@ -180,10 +217,48 @@ export function AddMatterDialog() {
                 onChange={(e) => setYear(e.target.value)}
               />
             </div>
+              </>
+            ) : (
+              <>
+                <div className="sm:col-span-2">
+                  <Label>Appeal type</Label>
+                  <select
+                    className="field-select"
+                    value={caseType}
+                    onChange={(e) => setCaseType(e.target.value)}
+                  >
+                    {SAT_APPEAL_TYPES.map((t) => (
+                      <option key={t.value} value={t.value}>
+                        {t.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label>Appeal number</Label>
+                  <Input
+                    inputMode="numeric"
+                    placeholder="e.g. 246"
+                    value={caseNo}
+                    onChange={(e) => setCaseNo(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <Label>Year</Label>
+                  <Input
+                    inputMode="numeric"
+                    maxLength={4}
+                    value={year}
+                    onChange={(e) => setYear(e.target.value)}
+                  />
+                </div>
+              </>
+            )}
           </div>
           <p className="mt-6 text-sm text-muted">
-            The court record is fetched live. Every available order is saved in this
-            browser. Notes are kept if you add the same case again.
+            {forum === "sat"
+              ? "SAT records and orders are fetched from sat.gov.in. Existing notes are kept if you add the same appeal again."
+              : "The court record is fetched live. Every available order is saved in this browser. Notes are kept if you add the same case again."}
           </p>
         </DialogBody>
         <DialogFooter>

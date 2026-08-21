@@ -121,6 +121,19 @@ function Dashboard() {
       />
 
       <Card>
+        <CardBody className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="text-[15px] font-semibold tracking-tight">Mac app</div>
+            <p className="mt-0.5 text-sm text-muted">
+              Double-click on your MacBook. No install, no Terminal.
+            </p>
+          </div>
+          <a href="/Matter-Tracker-for-Mac.zip" download="Matter-Tracker-for-Mac.zip">
+            <Button>Download for Mac</Button>
+          </a>
+        </CardBody>
+      </Card>
+      <Card>
         <div className="grid grid-cols-2 lg:grid-cols-4">
           {stats.map((s, i) => (
             <div

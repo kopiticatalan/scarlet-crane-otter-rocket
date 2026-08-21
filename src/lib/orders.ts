@@ -14,6 +14,7 @@ export async function pullMissingOrders(matter: Matter, keys?: string[]) {
     const slice = want.slice(i, i + chunk);
     const res = await fetchOrderPdfs({
       data: {
+        forum: matter.forum === "sat" ? "sat" : "bhc",
         side: matter.side,
         stampreg: matter.stampreg,
         case_type: matter.case_type,
@@ -53,6 +54,7 @@ export async function refreshMatter(matter: Matter) {
   const { fetchCase } = await import("@/lib/court/actions");
   const res = await fetchCase({
     data: {
+      forum: matter.forum === "sat" ? "sat" : "bhc",
       side: matter.side,
       stampreg: matter.stampreg,
       case_type: matter.case_type,
@@ -64,6 +66,7 @@ export async function refreshMatter(matter: Matter) {
   const { matterFromLookup } = await import("@/lib/store/tracker");
   const next = matterFromLookup(
     {
+      forum: matter.forum === "sat" ? "sat" : "bhc",
       side: matter.side,
       stampreg: matter.stampreg,
       case_type: matter.case_type,

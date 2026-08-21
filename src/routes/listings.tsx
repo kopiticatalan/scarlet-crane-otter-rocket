@@ -36,7 +36,7 @@ function ListingsPage() {
         subtitle={
           listings.generated_at
             ? `${listings.range_label || "Range"} · last scanned ${listings.generated_at}`
-            : "Tracked matters and watched firms for the next few court days."
+            : "Tracked matters and watched firms for Bombay High Court and SAT."
         }
         action={
           <>
@@ -120,7 +120,7 @@ function ListingsPage() {
                   <td className="px-5 py-4 align-top">
                     <div className="max-w-[280px] font-medium leading-snug">{r.matter}</div>
                     <div className="text-xs text-muted">
-                      Sr. {r.serial || "—"}
+                      {r.source === "sat" ? "SAT · " : ""}Sr. {r.serial || "—"}
                       {r.connected ? ` · with ${r.connected}` : ""}
                     </div>
                   </td>
@@ -141,6 +141,16 @@ function ListingsPage() {
                   </td>
                   <td className="px-5 py-4 align-top">
                     <div className="flex justify-end gap-3">
+                      {r.source === "sat" && r.href ? (
+                        <a
+                          href={r.href}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-sm font-medium text-accent"
+                        >
+                          List
+                        </a>
+                      ) : (
                       <button
                         className="text-sm font-medium text-accent"
                         onClick={async () => {
@@ -165,6 +175,7 @@ function ListingsPage() {
                       >
                         PDF
                       </button>
+                      )}
                       {r.tracked && r.mid ? (
                         <Link
                           to="/matters/$id"

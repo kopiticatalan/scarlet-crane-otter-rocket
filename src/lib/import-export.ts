@@ -45,6 +45,7 @@ function asNotes(raw: unknown): HearingNote[] {
 }
 
 export function normalizeImportedMatter(raw: Record<string, unknown>): Matter | null {
+  const forum = String(raw.forum || "") === "sat" ? "sat" : "bhc";
   const side = String(raw.side || "2") as Matter["side"];
   const stampreg = String(raw.stampreg || "R") as Matter["stampreg"];
   const case_type = String(raw.case_type || "");
@@ -53,11 +54,17 @@ export function normalizeImportedMatter(raw: Record<string, unknown>): Matter | 
   if (!case_type || !case_no || !year) return null;
   const id =
     String(raw.id || "") ||
-    [side, stampreg, case_type, case_no, year].join("|");
+    (forum === "sat"
+      ? ["sat", case_type, case_no, year].join("|")
+      : [side, stampreg, case_type, case_no, year].join("|"));
   return {
     id,
+    forum,
     side: side === "1" ? "1" : "2",
-    side_label: String(raw.side_label || SIDE_LABEL[side === "1" ? "1" : "2"]),
+    side_label: String(
+      raw.side_label ||
+        (forum === "sat" ? "SAT · Mumbai" : SIDE_LABEL[side === "1" ? "1" : "2"]),
+    ),
     stampreg: stampreg === "S" ? "S" : "R",
     stampreg_label: String(raw.stampreg_label || STAMP_LABEL[stampreg === "S" ? "S" : "R"]),
     case_type,

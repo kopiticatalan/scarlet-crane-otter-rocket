@@ -23,28 +23,51 @@ export function matterCaption(petitioner?: string, respondent?: string) {
   return `${a} v ${b}`;
 }
 
+export function forumOf(m: { forum?: string }) {
+  return m.forum === "sat" ? "sat" : "bhc";
+}
+
 export function caseLabel(m: {
+  forum?: string;
   type_name?: string;
   case_no?: string;
   year?: string;
   stampreg?: string;
 }) {
-  const abbr = (m.type_name || "").split(" - ")[0].trim() || "Case";
   const no = m.case_no || "—";
   const yr = m.year || "—";
+  if (forumOf(m) === "sat") {
+    const kind = (m.type_name || "SEBI").split(" - ")[0].trim() || "SEBI";
+    return `${kind} ${no}/${yr}`;
+  }
+  const abbr = (m.type_name || "").split(" - ")[0].trim() || "Case";
   if (m.stampreg === "S") return `${abbr}(L)/${no}/${yr}`;
   return `${abbr}/${no}/${yr}`;
 }
 
 export function matterCasenos(m: {
+  forum?: string;
   type_name?: string;
   case_no?: string;
   year?: string;
   stampreg?: string;
   cnr?: string;
+  lodging?: string;
 }) {
   const out = [caseLabel(m).toUpperCase()];
   if (m.cnr) out.push(m.cnr.toUpperCase());
+  if (forumOf(m) === "sat") {
+    const no = (m.case_no || "").replace(/\D/g, "");
+    const yr = m.year || "";
+    const kind = (m.type_name || "SEBI").split(" - ")[0].trim().toUpperCase();
+    const padded = no.length >= 4 ? no : no.padStart(4, "0");
+    if (padded && yr) {
+      out.push(`${kind}/${padded}/${yr}`);
+      out.push(`${padded}/${yr}`);
+      out.push(`APPEAL - ${padded}/${yr}`);
+    }
+    if (m.lodging) out.push(String(m.lodging).toUpperCase());
+  }
   return out;
 }
 
